@@ -6,9 +6,9 @@ const Componente = require('../models/componenteModel');
 const incidenciaController = {
   async index(req, res) {
     const user = req.session.user;
-    const { estado, prioridad } = req.query;
+    const { estado, prioridad, id_tecnico_recibe } = req.query;
     try {
-      const filters = { estado, prioridad };
+      const filters = { estado, prioridad, id_tecnico_recibe };
       
       // If user is employee or boss, filter by their reported incidents
       if (user.tabla === 'usuario') {
@@ -16,9 +16,15 @@ const incidenciaController = {
       }
       
       const incidencias = await Incidencia.getAll(req, filters);
+      const tecnicos = await Tecnico.getAll(req);
       res.render('incidencias/index', { 
         incidencias, 
-        filters: { estado: estado || 'todos', prioridad: prioridad || 'todos' } 
+        tecnicos,
+        filters: { 
+          estado: estado || 'todos', 
+          prioridad: prioridad || 'todos',
+          id_tecnico_recibe: id_tecnico_recibe || 'todos'
+        } 
       });
     } catch (err) {
       console.error(err);
@@ -70,13 +76,18 @@ const incidenciaController = {
     const user = req.session.user;
     const { id_equipo, descripcion, prioridad } = req.body;
     try {
-      await Incidencia.create(req, {
+      const data = {
         id_equipo,
-        id_usuario_reporta: user.id,
         descripcion,
         prioridad: prioridad || 'media',
         estado: 'pendiente'
-      });
+      };
+      if (user.tabla === 'tecnico') {
+        data.id_tecnico_reporta = user.id;
+      } else {
+        data.id_usuario_reporta = user.id;
+      }
+      await Incidencia.create(req, data);
       res.redirect('/incidencias');
     } catch (err) {
       console.error(err);
@@ -155,12 +166,17 @@ const incidenciaController = {
   async postAsignar(req, res) {
     const { id } = req.params;
     const { id_tecnico_recibe } = req.body;
+    const user = req.session.user;
     try {
-      await Incidencia.asignar(req, id, id_tecnico_recibe);
+      const db = require('../config/database');
+      // Invocar procedimiento almacenado para asignar incidencia con validación de límites y roles
+      await db.execute(req, `CALL sp_asignar_incidencia(?, ?, ?)`, [id, id_tecnico_recibe, user.id]);
       res.redirect(`/incidencias/${id}`);
     } catch (err) {
       console.error(err);
-      res.status(500).render('error', { message: 'Error al asignar la incidencia' });
+      res.status(400).render('error', { 
+        message: err.sqlMessage || 'Error al asignar la incidencia. Verifique las reglas de asignación.' 
+      });
     }
   },
 

@@ -12,7 +12,7 @@ router.get('/:id', isAuthenticated, incidenciaController.show);
 router.get('/:id/editar', isAuthenticated, isRole(['tecnico', 'administrador']), incidenciaController.getEdit);
 router.post('/:id/editar', isAuthenticated, isRole(['tecnico', 'administrador']), incidenciaController.postEdit);
 
-router.post('/:id/asignar', isAuthenticated, isRole(['administrador']), incidenciaController.postAsignar);
+router.post('/:id/asignar', isAuthenticated, isRole(['administrador', 'tecnico']), incidenciaController.postAsignar);
 router.post('/:id/seguimiento', isAuthenticated, isRole(['practicante', 'tecnico', 'administrador']), incidenciaController.postCreateSeguimiento);
 
 module.exports = router;

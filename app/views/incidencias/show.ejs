@@ -30,11 +30,11 @@
         </div>
         <div class="detail-item">
           <span class="detail-label">Reportado por</span>
-          <span class="detail-val"><%= incidencia.usuario_nombres %> <%= incidencia.usuario_apellidos %></span>
+          <span class="detail-val"><%= incidencia.reporta_nombre %></span>
         </div>
         <div class="detail-item">
-          <span class="detail-label">Correo Usuario</span>
-          <span class="detail-val" style="font-size: 14px;"><%= incidencia.usuario_correo %></span>
+          <span class="detail-label">Correo de Reportante</span>
+          <span class="detail-val" style="font-size: 14px;"><%= incidencia.reporta_correo %></span>
         </div>
         <div class="detail-item">
           <span class="detail-label">Técnico Asignado</span>
@@ -118,16 +118,19 @@
   <!-- Barra Lateral: Gestión Administrativa y Técnico -->
   <div style="display: flex; flex-direction: column; gap: 30px;">
     
-    <!-- Sección de Asignación (Solo Admin) -->
-    <% if (user.rol === 'administrador') { %>
+    <!-- Sección de Asignación (Admin y Técnicos) -->
+    <% if (user.rol === 'administrador' || user.rol === 'tecnico') { %>
       <div class="clay-card">
         <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 15px; color: var(--accent);"><i class="fa-solid fa-user-check" style="margin-right: 8px;"></i>Asignar Personal</h2>
         <form action="/incidencias/<%= incidencia.id_incidencia %>/asignar" method="POST">
           <div class="form-group" style="margin-bottom: 20px;">
             <label for="id_tecnico_recibe" class="form-label">Técnico / Practicante Responsable</label>
             <select id="id_tecnico_recibe" name="id_tecnico_recibe" class="clay-select" required>
+              <option value="">-- Seleccionar --</option>
               <% tecnicos.forEach(tec => { %>
-                <option value="<%= tec.id_tecnico %>" <%= incidencia.id_tecnico_recibe === tec.id_tecnico ? 'selected' : '' %>><%= tec.nombres %> <%= tec.apellidos %> (<%= tec.rango_nombre %>)</option>
+                <% if (user.rol === 'administrador' || tec.id_tecnico === user.id || tec.rango_nombre === 'practicante') { %>
+                  <option value="<%= tec.id_tecnico %>" <%= incidencia.id_tecnico_recibe === tec.id_tecnico ? 'selected' : '' %>><%= tec.nombres %> <%= tec.apellidos %> (<%= tec.rango_nombre %>)</option>
+                <% } %>
               <% }) %>
             </select>
           </div>

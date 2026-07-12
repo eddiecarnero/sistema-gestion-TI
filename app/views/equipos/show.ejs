@@ -12,7 +12,7 @@
         <i class="fa-solid fa-pen"></i> Editar General
       </a>
     <% } %>
-    <% if (user.rol === 'administrador' && equipo.estado !== 'baja') { %>
+    <% if ((user.rol === 'administrador' || (user.rol === 'tecnico' && equipo.tipo === 'laptop')) && equipo.estado !== 'baja') { %>
       <a href="/equipos/<%= equipo.id_equipo %>/asignar" class="btn btn-success">
         <i class="fa-solid fa-user-plus"></i> Asignar Equipo
       </a>
@@ -138,7 +138,7 @@
           <th>Ubicación / Ambiente</th>
           <th>Fecha Inicio</th>
           <th>Fecha Fin</th>
-          <% if (user.rol === 'administrador') { %>
+          <% if (user.rol === 'administrador' || (user.rol === 'tecnico' && equipo.tipo === 'laptop')) { %>
             <th style="text-align: right;">Acciones</th>
           <% } %>
         </tr>
@@ -171,7 +171,7 @@
                   <span class="badge badge-en_proceso">Activa</span>
                 <% } %>
               </td>
-              <% if (user.rol === 'administrador') { %>
+              <% if (user.rol === 'administrador' || (user.rol === 'tecnico' && equipo.tipo === 'laptop')) { %>
                 <td style="text-align: right;">
                   <% if (!asig.fecha_fin) { %>
                     <form action="/equipos/<%= equipo.id_equipo %>/asignacion/<%= asig.id_asignacion %>/terminar" method="POST" style="margin: 0;">

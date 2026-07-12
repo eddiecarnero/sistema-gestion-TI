@@ -77,7 +77,11 @@ const componenteController = {
     const { tipo, id_equipo } = req.body;
     try {
       await Componente.update(req, id, tipo, req.body);
-      res.redirect(`/componentes/equipo/${id_equipo}`);
+      if (id_equipo) {
+        res.redirect(`/componentes/equipo/${id_equipo}`);
+      } else {
+        res.redirect(`/admin/componentes`);
+      }
     } catch (err) {
       console.error(err);
       res.status(500).render('error', { message: 'Error al actualizar el componente' });
@@ -93,6 +97,41 @@ const componenteController = {
     } catch (err) {
       console.error(err);
       res.status(500).render('error', { message: 'Error al eliminar el componente' });
+    }
+  },
+
+  async getAsignarAlmacen(req, res) {
+    const { equipoId } = req.params;
+    try {
+      const equipo = await Equipo.getById(req, equipoId);
+      if (!equipo) {
+        return res.status(404).render('error', { message: 'Equipo no encontrado' });
+      }
+      const disponibles = await Componente.getDisponiblesEnAlmacen(req);
+      res.render('componentes/asignar_almacen', { equipo, disponibles });
+    } catch (err) {
+      console.error(err);
+      res.status(500).render('error', { message: 'Error al cargar componentes de almacén' });
+    }
+  },
+
+  async postAsignarAlmacen(req, res) {
+    const { equipoId } = req.params;
+    const { id_componente } = req.body;
+    try {
+      const db = require('../config/database');
+      // Invocar procedimiento almacenado en MySQL para vincular componente libre
+      await db.execute(req, `CALL sp_asignar_componente_equipo(?, ?)`, [id_componente, equipoId]);
+      res.redirect(`/componentes/equipo/${equipoId}`);
+    } catch (err) {
+      console.error(err);
+      const equipo = await Equipo.getById(req, equipoId);
+      const disponibles = await Componente.getDisponiblesEnAlmacen(req);
+      res.render('componentes/asignar_almacen', { 
+        equipo, 
+        disponibles, 
+        error: err.sqlMessage || 'Error al asignar el componente. Verifique las restricciones.' 
+      });
     }
   }
 };

@@ -13,7 +13,7 @@
 <!-- Filtros de búsqueda (Solo para Staff) -->
 <% if (user.rol === 'administrador' || user.rol === 'tecnico' || user.rol === 'practicante') { %>
   <div class="clay-card">
-    <form action="/incidencias" method="GET" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; align-items: flex-end;">
+    <form action="/incidencias" method="GET" style="display: grid; grid-template-columns: 1fr 1fr 1.2fr 0.8fr; gap: 15px; align-items: flex-end;">
       <div class="form-group" style="margin-bottom: 0;">
         <label for="estado" class="form-label">Estado del Ticket</label>
         <select id="estado" name="estado" class="clay-select">
@@ -22,6 +22,7 @@
           <option value="en_proceso" <%= filters.estado === 'en_proceso' ? 'selected' : '' %>>En Proceso</option>
           <option value="resuelta" <%= filters.estado === 'resuelta' ? 'selected' : '' %>>Resuelta</option>
           <option value="cerrada" <%= filters.estado === 'cerrada' ? 'selected' : '' %>>Cerrada</option>
+          <option value="por_confirmar" <%= filters.estado === 'por_confirmar' ? 'selected' : '' %>>Por Confirmar</option>
         </select>
       </div>
 
@@ -35,8 +36,20 @@
         </select>
       </div>
 
+      <div class="form-group" style="margin-bottom: 0;">
+        <label for="id_tecnico_recibe" class="form-label">Técnico Asignado</label>
+        <select id="id_tecnico_recibe" name="id_tecnico_recibe" class="clay-select">
+          <option value="todos" <%= filters.id_tecnico_recibe === 'todos' ? 'selected' : '' %>>Todos</option>
+          <% tecnicos.forEach(t => { %>
+            <option value="<%= t.id_tecnico %>" <%= parseInt(filters.id_tecnico_recibe) === t.id_tecnico ? 'selected' : '' %>>
+              <%= t.nombres %> <%= t.apellidos %> (<%= t.rango_nombre %>)
+            </option>
+          <% }) %>
+        </select>
+      </div>
+
       <button type="submit" class="btn btn-secondary" style="height: 50px;">
-        <i class="fa-solid fa-filter"></i> Filtrar Tickets
+        <i class="fa-solid fa-filter"></i> Filtrar
       </button>
     </form>
   </div>
@@ -44,12 +57,13 @@
 
 <!-- Tabla de incidencias -->
 <div class="table-responsive">
-  <table class="clay-table">
+  <table class="clay-table clay-table-compact">
     <thead>
       <tr>
         <th>Ticket ID</th>
         <th>Código Equipo</th>
         <th>Reportado por</th>
+        <th>Técnico Asignado</th>
         <th>Descripción</th>
         <th>Prioridad</th>
         <th>Estado</th>
@@ -63,8 +77,15 @@
           <tr>
             <td style="font-weight: 800; color: #fff;">#<%= inc.id_incidencia %></td>
             <td><%= inc.codigo_inventario %> (<%= inc.equipo_tipo %>)</td>
-            <td><%= inc.usuario_nombres %> <%= inc.usuario_apellidos %></td>
-            <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><%= inc.descripcion %></td>
+            <td style="font-weight: 700;"><%= inc.reporta_nombre %></td>
+            <td>
+              <% if (inc.tecnico_nombres) { %>
+                <span style="font-weight: 700; color: var(--secondary);"><%= inc.tecnico_nombres %> <%= inc.tecnico_apellidos %></span>
+              <% } else { %>
+                <span style="color: var(--danger); font-weight: 800;">SIN ASIGNAR</span>
+              <% } %>
+            </td>
+            <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><%= inc.descripcion %></td>
             <td>
               <span class="badge badge-prioridad-<%= inc.prioridad %>"><%= inc.prioridad %></span>
             </td>
@@ -81,7 +102,7 @@
         <% }) %>
       <% } else { %>
         <tr>
-          <td colspan="8" style="text-align: center; color: var(--text-secondary); padding: 40px 0;">No se encontraron incidencias en esta lista.</td>
+          <td colspan="9" style="text-align: center; color: var(--text-secondary); padding: 40px 0;">No se encontraron incidencias en esta lista.</td>
         </tr>
       <% } %>
     </tbody>

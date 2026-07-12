@@ -446,6 +446,16 @@ body {
   background-color: rgba(255, 255, 255, 0.015);
 }
 
+/* Compact Table Variant */
+.clay-table-compact th {
+  padding: 12px 14px;
+  font-size: 11px;
+}
+.clay-table-compact td {
+  padding: 10px 14px;
+  font-size: 13px;
+}
+
 /* Badges / Status Tags */
 .badge {
   display: inline-flex;

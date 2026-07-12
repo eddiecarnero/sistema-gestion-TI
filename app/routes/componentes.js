@@ -6,6 +6,8 @@ const { isAuthenticated, isRole } = require('../middleware/auth');
 router.get('/equipo/:equipoId', isAuthenticated, isRole(['practicante', 'tecnico', 'administrador']), componenteController.index);
 router.get('/equipo/:equipoId/crear', isAuthenticated, isRole(['tecnico', 'administrador']), componenteController.getCreate);
 router.post('/equipo/:equipoId/crear', isAuthenticated, isRole(['tecnico', 'administrador']), componenteController.postCreate);
+router.get('/equipo/:equipoId/asignar-almacen', isAuthenticated, isRole(['tecnico', 'administrador']), componenteController.getAsignarAlmacen);
+router.post('/equipo/:equipoId/asignar-almacen', isAuthenticated, isRole(['tecnico', 'administrador']), componenteController.postAsignarAlmacen);
 
 router.get('/:id/editar', isAuthenticated, isRole(['tecnico', 'administrador']), componenteController.getEdit);
 router.post('/:id/editar', isAuthenticated, isRole(['tecnico', 'administrador']), componenteController.postEdit);

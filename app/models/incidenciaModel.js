@@ -4,11 +4,13 @@ const Incidencia = {
   async getAll(req, filters = {}) {
     let sql = `
       SELECT i.*, e.codigo_inventario, e.tipo as equipo_tipo,
-             u.nombres as usuario_nombres, u.apellidos as usuario_apellidos,
+             COALESCE(CONCAT(u.nombres, ' ', u.apellidos), CONCAT(tr.nombres, ' ', tr.apellidos)) as reporta_nombre,
+             COALESCE(u.correo, tr.correo) as reporta_correo,
              t.nombres as tecnico_nombres, t.apellidos as tecnico_apellidos
       FROM incidencia i
       JOIN equipo e ON i.id_equipo = e.id_equipo
-      JOIN usuario u ON i.id_usuario_reporta = u.id_usuario
+      LEFT JOIN usuario u ON i.id_usuario_reporta = u.id_usuario
+      LEFT JOIN tecnico tr ON i.id_tecnico_reporta = tr.id_tecnico
       LEFT JOIN tecnico t ON i.id_tecnico_recibe = t.id_tecnico
       WHERE 1=1
     `;
@@ -29,7 +31,12 @@ const Incidencia = {
       params.push(filters.id_usuario_reporta);
     }
 
-    if (filters.id_tecnico_recibe) {
+    if (filters.id_tecnico_reporta) {
+      sql += ` AND i.id_tecnico_reporta = ?`;
+      params.push(filters.id_tecnico_reporta);
+    }
+
+    if (filters.id_tecnico_recibe && filters.id_tecnico_recibe !== 'todos') {
       sql += ` AND i.id_tecnico_recibe = ?`;
       params.push(filters.id_tecnico_recibe);
     }
@@ -41,11 +48,13 @@ const Incidencia = {
   async getById(req, id) {
     const sql = `
       SELECT i.*, e.codigo_inventario, e.tipo as equipo_tipo, e.marca as equipo_marca,
-             u.nombres as usuario_nombres, u.apellidos as usuario_apellidos, u.correo as usuario_correo,
+             COALESCE(CONCAT(u.nombres, ' ', u.apellidos), CONCAT(tr.nombres, ' ', tr.apellidos)) as reporta_nombre,
+             COALESCE(u.correo, tr.correo) as reporta_correo,
              t.nombres as tecnico_nombres, t.apellidos as tecnico_apellidos
       FROM incidencia i
       JOIN equipo e ON i.id_equipo = e.id_equipo
-      JOIN usuario u ON i.id_usuario_reporta = u.id_usuario
+      LEFT JOIN usuario u ON i.id_usuario_reporta = u.id_usuario
+      LEFT JOIN tecnico tr ON i.id_tecnico_reporta = tr.id_tecnico
       LEFT JOIN tecnico t ON i.id_tecnico_recibe = t.id_tecnico
       WHERE i.id_incidencia = ?
     `;
@@ -55,12 +64,13 @@ const Incidencia = {
 
   async create(req, data) {
     const sql = `
-      INSERT INTO incidencia (id_equipo, id_usuario_reporta, descripcion, prioridad, estado, fecha_creacion)
-      VALUES (?, ?, ?, ?, ?, NOW())
+      INSERT INTO incidencia (id_equipo, id_usuario_reporta, id_tecnico_reporta, descripcion, prioridad, estado, fecha_creacion)
+      VALUES (?, ?, ?, ?, ?, ?, NOW())
     `;
     const params = [
       data.id_equipo,
-      data.id_usuario_reporta,
+      data.id_usuario_reporta || null,
+      data.id_tecnico_reporta || null,
       data.descripcion,
       data.prioridad || 'media',
       data.estado || 'pendiente'

@@ -366,8 +366,20 @@ const equipoController = {
   // Assignment management
   async getAsignar(req, res) {
     const { id } = req.params;
+    const user = req.session.user;
     try {
       const equipo = await Equipo.getById(req, id);
+      if (!equipo) {
+        return res.status(404).render('error', { message: 'Equipo no encontrado' });
+      }
+
+      // Los técnicos solo pueden asignar laptops
+      if (user.rol === 'tecnico' && equipo.tipo !== 'laptop') {
+        return res.status(403).render('error', { 
+          message: 'Los técnicos solo tienen permisos para asignar laptops. Otros dispositivos son asignados únicamente por el administrador.' 
+        });
+      }
+
       const usuarios = await Usuario.getAll(req);
       const ambientes = await Equipo.getAmbientes(req);
       res.render('equipos/asignar', { equipo, usuarios, ambientes });
@@ -380,7 +392,20 @@ const equipoController = {
   async postAsignar(req, res) {
     const { id } = req.params;
     const { id_usuario, id_ambiente } = req.body;
+    const user = req.session.user;
     try {
+      const equipo = await Equipo.getById(req, id);
+      if (!equipo) {
+        return res.status(404).render('error', { message: 'Equipo no encontrado' });
+      }
+
+      // Los técnicos solo pueden asignar laptops
+      if (user.rol === 'tecnico' && equipo.tipo !== 'laptop') {
+        return res.status(403).render('error', { 
+          message: 'Los técnicos solo tienen permisos para asignar laptops.' 
+        });
+      }
+
       await Equipo.createAsignacion(req, {
         id_equipo: id,
         id_usuario: id_usuario || null,
@@ -395,7 +420,20 @@ const equipoController = {
 
   async postTerminarAsignacion(req, res) {
     const { id, id_asignacion } = req.params;
+    const user = req.session.user;
     try {
+      const equipo = await Equipo.getById(req, id);
+      if (!equipo) {
+        return res.status(404).render('error', { message: 'Equipo no encontrado' });
+      }
+
+      // Los técnicos solo pueden desasignar laptops
+      if (user.rol === 'tecnico' && equipo.tipo !== 'laptop') {
+        return res.status(403).render('error', { 
+          message: 'Los técnicos solo tienen permisos para desasignar laptops.' 
+        });
+      }
+
       await Equipo.terminarAsignacion(req, id_asignacion);
       res.redirect(`/equipos/${id}`);
     } catch (err) {

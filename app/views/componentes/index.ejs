@@ -8,6 +8,9 @@
       <i class="fa-solid fa-arrow-left"></i> Volver a la Ficha
     </a>
     <% if (user.rol === 'administrador' || user.rol === 'tecnico') { %>
+      <a href="/componentes/equipo/<%= equipo.id_equipo %>/asignar-almacen" class="btn btn-secondary" style="height: 46px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 16px; font-size: 14px; font-weight: 700;">
+        <i class="fa-solid fa-warehouse"></i> Usar Almacén
+      </a>
       <div style="position: relative; display: inline-block;">
         <select id="add-component-type" class="clay-select" style="padding: 10px 40px 10px 20px; font-size: 14px; width: 220px; height: 46px;">
           <option value="procesador">Agregar Procesador</option>

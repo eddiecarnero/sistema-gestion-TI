@@ -28,8 +28,8 @@ router.get('/:id/laptop-detalle/editar', isAuthenticated, isRole(['tecnico', 'ad
 router.post('/:id/laptop-detalle/editar', isAuthenticated, isRole(['tecnico', 'administrador']), equipoController.postEditLaptopDetalle);
 
 // Assignment routes
-router.get('/:id/asignar', isAuthenticated, isRole(['administrador']), equipoController.getAsignar);
-router.post('/:id/asignar', isAuthenticated, isRole(['administrador']), equipoController.postAsignar);
-router.post('/:id/asignacion/:id_asignacion/terminar', isAuthenticated, isRole(['administrador']), equipoController.postTerminarAsignacion);
+router.get('/:id/asignar', isAuthenticated, isRole(['administrador', 'tecnico']), equipoController.getAsignar);
+router.post('/:id/asignar', isAuthenticated, isRole(['administrador', 'tecnico']), equipoController.postAsignar);
+router.post('/:id/asignacion/:id_asignacion/terminar', isAuthenticated, isRole(['administrador', 'tecnico']), equipoController.postTerminarAsignacion);
 
 module.exports = router;

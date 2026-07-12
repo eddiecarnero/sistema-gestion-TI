@@ -1,10 +1,16 @@
 <div class="top-bar">
   <div>
     <h1 class="page-title">Editar Componente: <span style="text-transform: capitalize;"><%= componente.tipo.replace('_', ' ') %></span></h1>
-    <p style="color: var(--text-secondary); margin-top: 5px; font-weight: 600;">Modificar hardware del equipo <%= equipo.codigo_inventario %></p>
+    <p style="color: var(--text-secondary); margin-top: 5px; font-weight: 600;">
+      <% if (equipo) { %>
+        Modificar hardware del equipo <%= equipo.codigo_inventario %>
+      <% } else { %>
+        Modificar hardware en Almacén
+      <% } %>
+    </p>
   </div>
   <div>
-    <a href="/componentes/equipo/<%= equipo.id_equipo %>" class="btn btn-secondary">
+    <a href="<%= equipo ? '/componentes/equipo/' + equipo.id_equipo : '/admin/componentes' %>" class="btn btn-secondary">
       <i class="fa-solid fa-arrow-left"></i> Volver a la Lista
     </a>
   </div>
@@ -14,7 +20,7 @@
   <div class="clay-card">
     <form action="/componentes/<%= componente.id_componente %>/editar" method="POST">
       <input type="hidden" name="tipo" value="<%= componente.tipo %>">
-      <input type="hidden" name="id_equipo" value="<%= equipo.id_equipo %>">
+      <input type="hidden" name="id_equipo" value="<%= equipo ? equipo.id_equipo : '' %>">
 
       <div class="form-group">
         <label for="estado_componente" class="form-label">Estado del Componente</label>
@@ -157,7 +163,7 @@
         <button type="submit" class="btn btn-primary" style="flex: 1; padding: 14px;">
           Guardar Cambios <i class="fa-solid fa-save" style="margin-left: 8px;"></i>
         </button>
-        <a href="/componentes/equipo/<%= equipo.id_equipo %>" class="btn btn-secondary" style="flex: 1; padding: 14px;">Cancelar</a>
+        <a href="<%= equipo ? '/componentes/equipo/' + equipo.id_equipo : '/admin/componentes' %>" class="btn btn-secondary" style="flex: 1; padding: 14px;">Cancelar</a>
       </div>
     </form>
   </div>
