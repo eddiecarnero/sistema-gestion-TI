@@ -177,7 +177,7 @@ CREATE TABLE `fuente_poder` (
 -- Tabla de incidencias
 CREATE TABLE `incidencia` (
   `id_incidencia` int PRIMARY KEY AUTO_INCREMENT,
-  `id_equipo` int NOT NULL,
+  `id_equipo` int,
   `id_usuario_reporta` int NOT NULL,
   `id_tecnico_recibe` int,
   `descripcion` text NOT NULL,
