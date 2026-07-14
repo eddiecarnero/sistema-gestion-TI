@@ -37,11 +37,10 @@
                         <h3>Empleado</h3>
                         <p>Reporta fallas de equipos y consulta el estado de tus incidencias.</p>
                     </div>
-                    <div class="role-card disabled" data-role="jefe">
+                    <div class="role-card" data-role="jefe">
                         <div class="icon">💼</div>
                         <h3>Jefe de Área</h3>
-                        <span class="badge-soon">Próximamente</span>
-                        <p>Genera solicitudes de TI y gestiona requerimientos de hardware.</p>
+                        <p>Genera solicitudes de TI, reporta incidencias y gestiona requerimientos.</p>
                     </div>
                     <div class="role-card disabled" data-role="tecnico">
                         <div class="icon">🔧</div>
@@ -86,6 +85,8 @@
             <div class="action-bar">
                 <button id="btn-nav-registrar" class="tab-btn active">Reportar Falla (Incidencia)</button>
                 <button id="btn-nav-revisar" class="tab-btn">Revisar mis Incidencias</button>
+                <button id="btn-nav-crear-solicitud" class="tab-btn hidden">Crear Solicitud (Jefe)</button>
+                <button id="btn-nav-revisar-solicitudes" class="tab-btn hidden">Revisar mis Solicitudes</button>
             </div>
 
             <!-- Panel de Registro de Incidencia (sp_registrar_incidencia) -->
@@ -171,6 +172,90 @@
                     <h4 class="mt-4">Línea de Tiempo de Atención Técnica:</h4>
                     <div class="timeline" id="timeline-seguimiento">
                         <!-- Cargados dinámicamente de sp_ver_seguimiento_incidencia -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Panel de Creación de Solicitud (Jefe) -->
+            <section id="panel-crear-solicitud" class="dashboard-panel hidden">
+                <div class="card">
+                    <h2>Registrar Nueva Solicitud (Jefe)</h2>
+                    <p class="subtitle">Crea un requerimiento de TI (remodelación, mejora o reemplazo) para tu área</p>
+                    
+                    <form id="form-crear-solicitud">
+                        <div class="form-group">
+                            <label for="sol-tipo">Tipo de Solicitud</label>
+                            <select id="sol-tipo" class="form-control" required>
+                                <option value="remodelacion">Remodelación (Cambio de infraestructura de red/equipos en área)</option>
+                                <option value="mejora">Mejora (Upgrade de componentes o de infraestructura)</option>
+                                <option value="reemplazo">Reemplazo (Renovación de hardware inoperativo)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="sol-descripcion">Descripción del Requerimiento</label>
+                            <textarea id="sol-descripcion" class="form-control" rows="5" placeholder="Explica detalladamente qué necesitas y por qué (ej: compra de 5 mouses ópticos para L1, ampliación de memoria de laptops de investigación...)" required></textarea>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Enviar Solicitud a BD</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Panel de Revisión de Solicitudes (Jefe) -->
+            <section id="panel-revisar-solicitudes" class="dashboard-panel hidden">
+                <div class="card">
+                    <h2>Historial de Solicitudes de Área</h2>
+                    <p class="subtitle">Monitorea el estado y las respuestas dadas a tus requerimientos de TI</p>
+                    
+                    <div class="table-container">
+                        <table class="table" id="table-solicitudes">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Tipo</th>
+                                    <th>Descripción</th>
+                                    <th>Estado</th>
+                                    <th>Fecha Solicitud</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-solicitudes">
+                                <!-- Cargados dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Detalle y respuesta de la solicitud -->
+                <div id="card-solicitud-detalle" class="card mt-4 hidden">
+                    <div class="card-header-split">
+                        <h3>Detalle de la Solicitud #<span id="sol-detail-id"></span></h3>
+                        <button id="btn-close-sol-detail" class="btn-close-x">✕</button>
+                    </div>
+                    <div class="incidencia-info-grid">
+                        <div class="info-block">
+                            <span class="info-label">Tipo de Requerimiento:</span>
+                            <span id="sol-detail-tipo" class="info-value"></span>
+                        </div>
+                        <div class="info-block">
+                            <span class="info-label">Estado actual:</span>
+                            <span id="sol-detail-estado" class="badge"></span>
+                        </div>
+                        <div class="info-block">
+                            <span class="info-label">Fecha de Solicitud:</span>
+                            <span id="sol-detail-fecha" class="info-value"></span>
+                        </div>
+                    </div>
+                    <div class="info-block mt-4" style="background-color: var(--bg-input); padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <span class="info-label">Descripción Detallada:</span>
+                        <span id="sol-detail-descripcion" class="info-value" style="white-space: pre-wrap; display: block; margin-top: 0.5rem;"></span>
+                    </div>
+                    <div id="sol-response-container" class="info-block mt-4 hidden" style="background-color: rgba(16, 185, 129, 0.05); border: 1px solid var(--color-success); padding: 1.25rem; border-radius: 8px;">
+                        <span class="info-label" style="color: var(--color-success);">Fecha de Resolución / Respuesta:</span>
+                        <span id="sol-detail-respuesta-fecha" class="info-value" style="display: block; margin-top: 0.5rem; font-weight: 600;"></span>
                     </div>
                 </div>
             </section>

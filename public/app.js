@@ -18,17 +18,26 @@ const DOM = {
     selectUserSimulation: document.getElementById('select-user-simulation'),
     btnConfirmLogin: document.getElementById('btn-confirm-login'),
     
-    // Navegación Empleado
+    // Navegación Empleado / Jefe
     btnNavRegistrar: document.getElementById('btn-nav-registrar'),
     btnNavRevisar: document.getElementById('btn-nav-revisar'),
+    btnNavCrearSolicitud: document.getElementById('btn-nav-crear-solicitud'),
+    btnNavRevisarSolicitudes: document.getElementById('btn-nav-revisar-solicitudes'),
+    
     panelRegistrarIncidencia: document.getElementById('panel-registrar-incidencia'),
     panelRevisarIncidencias: document.getElementById('panel-revisar-incidencias'),
+    panelCrearSolicitud: document.getElementById('panel-crear-solicitud'),
+    panelRevisarSolicitudes: document.getElementById('panel-revisar-solicitudes'),
     
     // Formularios
     formRegistrarIncidencia: document.getElementById('form-registrar-incidencia'),
     regIdEquipo: document.getElementById('reg-id-equipo'),
     regPrioridad: document.getElementById('reg-prioridad'),
     regDescripcion: document.getElementById('reg-descripcion'),
+    
+    formCrearSolicitud: document.getElementById('form-crear-solicitud'),
+    solTipo: document.getElementById('sol-tipo'),
+    solDescripcion: document.getElementById('sol-descripcion'),
     
     // Tablas y detalles
     tbodyIncidencias: document.getElementById('tbody-incidencias'),
@@ -39,6 +48,17 @@ const DOM = {
     detailDescripcion: document.getElementById('detail-descripcion'),
     detailEstado: document.getElementById('detail-estado'),
     timelineSeguimiento: document.getElementById('timeline-seguimiento'),
+    
+    tbodySolicitudes: document.getElementById('tbody-solicitudes'),
+    cardSolicitudDetalle: document.getElementById('card-solicitud-detalle'),
+    btnCloseSolDetail: document.getElementById('btn-close-sol-detail'),
+    solDetailId: document.getElementById('sol-detail-id'),
+    solDetailTipo: document.getElementById('sol-detail-tipo'),
+    solDetailEstado: document.getElementById('sol-detail-estado'),
+    solDetailFecha: document.getElementById('sol-detail-fecha'),
+    solDetailDescripcion: document.getElementById('sol-detail-descripcion'),
+    solResponseContainer: document.getElementById('sol-response-container'),
+    solDetailRespuestaFecha: document.getElementById('sol-detail-respuesta-fecha'),
     
     toastContainer: document.getElementById('toast-container')
 };
@@ -59,10 +79,10 @@ function showToast(message, type = 'success') {
     }, 4000);
 }
 
-// Cargar equipos disponibles para el SELECT de incidencias
+// Cargar equipos disponibles para el SELECT de incidencias (filtrado por su área)
 async function loadEquipos() {
     try {
-        const res = await fetch('/api/equipos');
+        const res = await fetch(`/api/equipos/usuario/${currentSession.userId}`);
         const equipos = await res.json();
         
         DOM.regIdEquipo.innerHTML = '<option value="" disabled selected>Selecciona el equipo...</option>';
@@ -173,7 +193,7 @@ async function showIncidenciaSeguimiento(id, equipo, descripcion, estado) {
                 <div class="timeline-dot"></div>
                 <div class="timeline-content">
                     <div class="timeline-header">
-                        <span class="timeline-tech">Técnico ID: ${seg.id_tecnico}</span>
+                        <span class="timeline-tech">Técnico: ${seg.tecnico_nombre || `Técnico ID: ${seg.id_tecnico}`}</span>
                         <span>${fechaStr}</span>
                     </div>
                     <div class="timeline-body">
@@ -190,6 +210,98 @@ async function showIncidenciaSeguimiento(id, equipo, descripcion, estado) {
         });
     } catch (err) {
         showToast('Error al consultar el historial de seguimiento.', 'danger');
+    }
+}
+
+// Cargar solicitudes del jefe y pintar la tabla
+async function loadSolicitudes() {
+    DOM.tbodySolicitudes.innerHTML = '<tr><td colspan="6" class="loading">Cargando solicitudes...</td></tr>';
+    DOM.cardSolicitudDetalle.classList.add('hidden');
+    
+    try {
+        const res = await fetch(`/api/jefe/solicitudes/${currentSession.userId}`);
+        const solicitudes = await res.json();
+        
+        DOM.tbodySolicitudes.innerHTML = '';
+        
+        if (solicitudes.length === 0) {
+            DOM.tbodySolicitudes.innerHTML = '<tr><td colspan="6" class="empty-table">No tienes solicitudes registradas.</td></tr>';
+            return;
+        }
+        
+        solicitudes.forEach(sol => {
+            const fechaStr = new Date(sol.fecha_solicitud).toLocaleString('es-PE', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>#${sol.id_solicitud}</td>
+                <td><span class="badge badge-tipo">${sol.tipo.toUpperCase()}</span></td>
+                <td class="text-truncate" style="max-width: 250px;">${sol.descripcion}</td>
+                <td><span class="badge badge-${sol.estado}">${sol.estado.toUpperCase()}</span></td>
+                <td>${fechaStr}</td>
+                <td>
+                    <button class="btn btn-sm btn-info btn-view-sol-detail" data-id="${sol.id_solicitud}">Ver Detalle</button>
+                </td>
+            `;
+            DOM.tbodySolicitudes.appendChild(tr);
+        });
+
+        // Event listener para ver detalle
+        document.querySelectorAll('.btn-view-sol-detail').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.getAttribute('data-id');
+                showSolicitudDetalle(id);
+            });
+        });
+    } catch (err) {
+        showToast('Error al cargar la lista de solicitudes.', 'danger');
+    }
+}
+
+// Mostrar el detalle completo de la solicitud llamando a sp_ver_estado_solicitud
+async function showSolicitudDetalle(id) {
+    DOM.solDetailId.textContent = id;
+    DOM.solDetailTipo.textContent = 'Buscando...';
+    DOM.solDetailEstado.textContent = 'Buscando...';
+    DOM.solDetailFecha.textContent = 'Buscando...';
+    DOM.solDetailDescripcion.textContent = 'Buscando...';
+    DOM.solResponseContainer.classList.add('hidden');
+    DOM.cardSolicitudDetalle.classList.remove('hidden');
+    DOM.cardSolicitudDetalle.scrollIntoView({ behavior: 'smooth' });
+
+    try {
+        const res = await fetch(`/api/jefe/solicitudes/detalle/${id}`);
+        const sol = await res.json();
+        
+        if (!sol) {
+            showToast('No se encontró la solicitud.', 'danger');
+            DOM.cardSolicitudDetalle.classList.add('hidden');
+            return;
+        }
+
+        DOM.solDetailTipo.textContent = sol.tipo.toUpperCase();
+        DOM.solDetailEstado.textContent = sol.estado.toUpperCase();
+        DOM.solDetailEstado.className = `badge badge-${sol.estado}`;
+        
+        const fechaSolStr = new Date(sol.fecha_solicitud).toLocaleString('es-PE', {
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+        });
+        DOM.solDetailFecha.textContent = fechaSolStr;
+        DOM.solDetailDescripcion.textContent = sol.descripcion;
+
+        if (sol.fecha_respuesta) {
+            const fechaRespStr = new Date(sol.fecha_respuesta).toLocaleString('es-PE', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+            DOM.solDetailRespuestaFecha.textContent = fechaRespStr;
+            DOM.solResponseContainer.classList.remove('hidden');
+        }
+    } catch (err) {
+        showToast('Error al obtener los detalles de la solicitud.', 'danger');
     }
 }
 
@@ -211,11 +323,11 @@ document.querySelectorAll('.role-card:not(.disabled)').forEach(card => {
             const res = await fetch('/api/roles/usuarios');
             const usuarios = await res.json();
             
-            // Filtrar usuarios del tipo empleado
-            const empleados = usuarios.filter(u => u.cargo === 'empleado');
+            // Filtrar usuarios según el rol seleccionado (empleado o jefe)
+            const filteredUsers = usuarios.filter(u => u.cargo === currentSession.role);
             
             DOM.selectUserSimulation.innerHTML = '';
-            empleados.forEach(emp => {
+            filteredUsers.forEach(emp => {
                 const opt = document.createElement('option');
                 opt.value = emp.id_usuario;
                 opt.textContent = `${emp.nombres} ${emp.apellidos} (ID: ${emp.id_usuario})`;
@@ -243,9 +355,21 @@ DOM.btnConfirmLogin.addEventListener('click', () => {
     DOM.sessionName.textContent = currentSession.userName;
     DOM.userSessionInfo.classList.remove('hidden');
     
-    // Cargar dashboard de empleado
+    // Mostrar u ocultar pestañas según el rol
+    if (currentSession.role === 'jefe') {
+        DOM.btnNavCrearSolicitud.classList.remove('hidden');
+        DOM.btnNavRevisarSolicitudes.classList.remove('hidden');
+    } else {
+        DOM.btnNavCrearSolicitud.classList.add('hidden');
+        DOM.btnNavRevisarSolicitudes.classList.add('hidden');
+    }
+
+    // Cargar dashboard
     DOM.viewLoginSimulation.classList.add('hidden');
     DOM.viewEmpleadoDashboard.classList.remove('hidden');
+    
+    // Resetear a pestaña principal (Reportar Falla)
+    DOM.btnNavRegistrar.click();
     
     // Carga inicial
     loadEquipos();
@@ -267,28 +391,67 @@ DOM.btnLogout.addEventListener('click', () => {
     DOM.viewEmpleadoDashboard.classList.add('hidden');
     DOM.viewRoleSelection.classList.remove('hidden');
     DOM.cardSeguimientoDetalle.classList.add('hidden');
+    DOM.cardSolicitudDetalle.classList.add('hidden');
+    
     DOM.formRegistrarIncidencia.reset();
+    DOM.formCrearSolicitud.reset();
+    
+    DOM.panelRegistrarIncidencia.classList.add('hidden');
+    DOM.panelRevisarIncidencias.classList.add('hidden');
+    DOM.panelCrearSolicitud.classList.add('hidden');
+    DOM.panelRevisarSolicitudes.classList.add('hidden');
 });
 
-// Navegación interna Empleado (Tabs)
-DOM.btnNavRegistrar.addEventListener('click', () => {
-    DOM.btnNavRegistrar.classList.add('active');
+// Función para limpiar todas las pestañas activas y paneles
+function deactivateAllTabs() {
+    DOM.btnNavRegistrar.classList.remove('active');
     DOM.btnNavRevisar.classList.remove('active');
-    DOM.panelRegistrarIncidencia.classList.remove('hidden');
+    DOM.btnNavCrearSolicitud.classList.remove('active');
+    DOM.btnNavRevisarSolicitudes.classList.remove('active');
+    
+    DOM.panelRegistrarIncidencia.classList.add('hidden');
     DOM.panelRevisarIncidencias.classList.add('hidden');
+    DOM.panelCrearSolicitud.classList.add('hidden');
+    DOM.panelRevisarSolicitudes.classList.add('hidden');
+    
+    DOM.cardSeguimientoDetalle.classList.add('hidden');
+    DOM.cardSolicitudDetalle.classList.add('hidden');
+}
+
+// Navegación interna (Tabs)
+DOM.btnNavRegistrar.addEventListener('click', () => {
+    deactivateAllTabs();
+    DOM.btnNavRegistrar.classList.add('active');
+    DOM.panelRegistrarIncidencia.classList.remove('hidden');
 });
 
 DOM.btnNavRevisar.addEventListener('click', () => {
-    DOM.btnNavRegistrar.classList.remove('active');
+    deactivateAllTabs();
     DOM.btnNavRevisar.classList.add('active');
-    DOM.panelRegistrarIncidencia.classList.add('hidden');
     DOM.panelRevisarIncidencias.classList.remove('hidden');
-    loadIncidencias(); // Recargar incidencias cada vez que se revisa la lista
+    loadIncidencias();
+});
+
+DOM.btnNavCrearSolicitud.addEventListener('click', () => {
+    deactivateAllTabs();
+    DOM.btnNavCrearSolicitud.classList.add('active');
+    DOM.panelCrearSolicitud.classList.remove('hidden');
+});
+
+DOM.btnNavRevisarSolicitudes.addEventListener('click', () => {
+    deactivateAllTabs();
+    DOM.btnNavRevisarSolicitudes.classList.add('active');
+    DOM.panelRevisarSolicitudes.classList.remove('hidden');
+    loadSolicitudes();
 });
 
 // Cerrar card de seguimiento detallado
 DOM.btnCloseDetail.addEventListener('click', () => {
     DOM.cardSeguimientoDetalle.classList.add('hidden');
+});
+
+DOM.btnCloseSolDetail.addEventListener('click', () => {
+    DOM.cardSolicitudDetalle.classList.add('hidden');
 });
 
 // =============================================================================
@@ -299,6 +462,7 @@ DOM.formRegistrarIncidencia.addEventListener('submit', async (e) => {
     e.preventDefault();
     
     const data = {
+        id_usuario: currentSession.userId,
         id_equipo: DOM.regIdEquipo.value,
         prioridad: DOM.regPrioridad.value,
         descripcion: DOM.regDescripcion.value.trim()
@@ -329,5 +493,40 @@ DOM.formRegistrarIncidencia.addEventListener('submit', async (e) => {
         }
     } catch (err) {
         showToast('Error de red al intentar registrar la incidencia.', 'danger');
+    }
+});
+
+// =============================================================================
+// SUBMIT DE FORMULARIO - CREAR SOLICITUD (JEFE)
+// =============================================================================
+DOM.formCrearSolicitud.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const data = {
+        id_usuario: currentSession.userId,
+        tipo: DOM.solTipo.value,
+        descripcion: DOM.solDescripcion.value.trim()
+    };
+    
+    try {
+        const res = await fetch('/api/jefe/solicitud', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await res.json();
+        
+        if (res.ok) {
+            showToast('¡Solicitud registrada correctamente en la Base de Datos!');
+            DOM.formCrearSolicitud.reset();
+            // Cargar y cambiar de pestaña automáticamente para ver la tabla
+            loadSolicitudes();
+            DOM.btnNavRevisarSolicitudes.click();
+        } else {
+            showToast(`Error: ${result.error}`, 'danger');
+        }
+    } catch (err) {
+        showToast('Error de red al intentar enviar la solicitud.', 'danger');
     }
 });

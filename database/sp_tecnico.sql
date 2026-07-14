@@ -21,7 +21,7 @@ CREATE PROCEDURE `sp_dar_baja_equipo`(
 )
 BEGIN
     DECLARE v_rango ENUM('practicante', 'tecnico', 'administrador_sistema');
-    DECLARE v_tipo_equipo ENUM('laptop', 'pc_escritorio', 'proyector', 'teclado', 'mouse', 'monitor', 'otro');
+    DECLARE v_tipo_equipo ENUM('pc_escritorio', 'proyector', 'teclado', 'mouse', 'monitor', 'otro');
     DECLARE v_id_almacen INT;
 
     -- 1. Validar existencia del técnico y obtener su rango

@@ -27,15 +27,6 @@ TRUNCATE TABLE `equipo`;
 TRUNCATE TABLE `ambiente`;
 TRUNCATE TABLE `tecnico`;
 TRUNCATE TABLE `usuario`;
-TRUNCATE TABLE `area`;
-
--- 1. INSERTAR ÁREAS
-INSERT INTO `area` (`id_area`, `nombre`) VALUES
-(1, 'Administración y Decanato'),
-(2, 'Dirección de Escuela'),
-(3, 'Laboratorios de Cómputo'),
-(4, 'Unidad de Posgrado'),
-(5, 'Departamento de Investigación');
 
 -- 2. INSERTAR USUARIOS (Jefes y Empleados)
 -- contraseñas encriptadas ficticias

@@ -11,10 +11,15 @@ USE `soportefisi`;
 -- 2. TABLAS Y RESTRICCIONES (CON CLAVES FORÁNEAS E INTEGRIDAD INLINE)
 -- =============================================================================
 
--- Tabla de áreas
-CREATE TABLE `area` (
-  `id_area` int PRIMARY KEY AUTO_INCREMENT,
-  `nombre` varchar(255) UNIQUE NOT NULL
+-- Tabla de ambientes
+CREATE TABLE `ambiente` (
+  `id_ambiente` int PRIMARY KEY AUTO_INCREMENT,
+  `numero` int NOT NULL,
+  `nombre` varchar(50) NOT NULL,
+  `pabellon` ENUM('Antiguo','Nuevo') NOT NULL,
+  `piso` int NOT NULL,
+  CONSTRAINT `chk_ambiente_numero` CHECK (`numero` > 0),
+  CONSTRAINT `chk_ambiente_piso` CHECK (`piso` >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Tabla de usuarios
@@ -30,7 +35,7 @@ CREATE TABLE `usuario` (
   `estado` boolean DEFAULT true,
   CONSTRAINT `chk_usuario_correo` CHECK (`correo` REGEXP '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$'),
   CONSTRAINT `chk_usuario_telefono` CHECK (`telefono` IS NULL OR `telefono` REGEXP '^[0-9]{7,15}$'),
-  CONSTRAINT `fk_usuario_area` FOREIGN KEY (`id_area`) REFERENCES `area` (`id_area`) ON DELETE RESTRICT
+  CONSTRAINT `fk_usuario_area` FOREIGN KEY (`id_area`) REFERENCES `ambiente` (`id_ambiente`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Tabla de técnicos
@@ -45,17 +50,6 @@ CREATE TABLE `tecnico` (
   `estado` boolean DEFAULT true,
   CONSTRAINT `chk_tecnico_correo` CHECK (`correo` REGEXP '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$'),
   CONSTRAINT `chk_tecnico_telefono` CHECK (`telefono` IS NULL OR `telefono` REGEXP '^[0-9]{7,15}$')
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Tabla de ambientes
-CREATE TABLE `ambiente` (
-  `id_ambiente` int PRIMARY KEY AUTO_INCREMENT,
-  `numero` int NOT NULL,
-  `nombre` varchar(50) NOT NULL,
-  `pabellon` ENUM('Antiguo','Nuevo') NOT NULL,
-  `piso` int NOT NULL,
-  CONSTRAINT `chk_ambiente_numero` CHECK (`numero` > 0),
-  CONSTRAINT `chk_ambiente_piso` CHECK (`piso` >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Tabla de equipos

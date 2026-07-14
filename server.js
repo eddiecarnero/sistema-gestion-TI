@@ -53,37 +53,39 @@ app.get('/api/roles/tecnicos', async (req, res) => {
     }
 });
 
-// 2. Obtener lista de todos los equipos disponibles (Para el formulario de incidencias)
-app.get('/api/equipos', async (req, res) => {
+// 2. Obtener lista de los equipos del área del usuario (Para el formulario de incidencias)
+app.get('/api/equipos/usuario/:id_usuario', async (req, res) => {
+    const { id_usuario } = req.params;
     try {
         const [rows] = await promisePool.query(
-            'SELECT id_equipo, codigo_inventario, tipo, marca, estado FROM equipo WHERE estado != "baja"'
+            'CALL sp_revisar_equipos_por_area_usuario(?)',
+            [id_usuario]
         );
-        res.json(rows);
+        res.json(rows[0]);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Error al obtener equipos.' });
+        res.status(500).json({ error: 'Error al obtener equipos del área del usuario.' });
     }
 });
 
-// 3. Registrar Incidencia (Llama al SP: sp_registrar_incidencia)
+// 3. Registrar Incidencia (Llama al SP: sp_registrar_incidencia_usuario)
 app.post('/api/empleado/incidencia', async (req, res) => {
-    const { id_equipo, prioridad, descripcion } = req.body;
+    const { id_usuario, id_equipo, prioridad, descripcion } = req.body;
     
-    if (!id_equipo || !prioridad || !descripcion) {
+    if (!id_usuario || !id_equipo || !prioridad || !descripcion) {
         return res.status(400).json({ error: 'Todos los campos son obligatorios.' });
     }
 
     try {
-        // En nuestro SP actualizados: sp_registrar_incidencia(id_equipo, prioridad, descripcion)
+        // En nuestro SP actualizado: sp_registrar_incidencia_usuario(id_usuario, id_equipo, prioridad, descripcion)
         await promisePool.query(
-            'CALL sp_registrar_incidencia(?, ?, ?)', 
-            [id_equipo, prioridad, descripcion]
+            'CALL sp_registrar_incidencia_usuario(?, ?, ?, ?)', 
+            [id_usuario, id_equipo, prioridad, descripcion]
         );
         res.json({ success: true, message: 'Incidencia registrada con éxito.' });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: error.sqlMessage || 'Error al ejecutar sp_registrar_incidencia.' });
+        res.status(500).json({ error: error.sqlMessage || 'Error al ejecutar sp_registrar_incidencia_usuario.' });
     }
 });
 
@@ -130,6 +132,60 @@ app.get('/api/empleado/incidencias/seguimiento/:id_incidencia', async (req, res)
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al ejecutar sp_ver_seguimiento_incidencia.' });
+    }
+});
+
+// =============================================================================
+// RUTAS PARA JEFES (SOLICITUDES)
+// =============================================================================
+
+// 7. Crear Solicitud (Llama al SP: sp_crear_solicitud_jefe)
+app.post('/api/jefe/solicitud', async (req, res) => {
+    const { id_usuario, tipo, descripcion } = req.body;
+
+    if (!id_usuario || !tipo || !descripcion) {
+        return res.status(400).json({ error: 'Todos los campos son obligatorios.' });
+    }
+
+    try {
+        await promisePool.query(
+            'CALL sp_crear_solicitud_jefe(?, ?, ?)',
+            [id_usuario, tipo, descripcion]
+        );
+        res.json({ success: true, message: 'Solicitud creada con éxito.' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: error.sqlMessage || 'Error al ejecutar sp_crear_solicitud_jefe.' });
+    }
+});
+
+// 8. Listar solicitudes de un jefe
+app.get('/api/jefe/solicitudes/:id_usuario', async (req, res) => {
+    const { id_usuario } = req.params;
+    try {
+        const [rows] = await promisePool.query(
+            'SELECT id_solicitud, tipo, descripcion, estado, fecha_solicitud FROM solicitud WHERE id_usuario_solicita = ?',
+            [id_usuario]
+        );
+        res.json(rows);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error al listar solicitudes del jefe.' });
+    }
+});
+
+// 9. Ver estado de solicitud (Llama al SP: sp_ver_estado_solicitud)
+app.get('/api/jefe/solicitudes/detalle/:id_solicitud', async (req, res) => {
+    const { id_solicitud } = req.params;
+    try {
+        const [rows] = await promisePool.query(
+            'CALL sp_ver_estado_solicitud(?)',
+            [id_solicitud]
+        );
+        res.json(rows[0][0] || null);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error al ejecutar sp_ver_estado_solicitud.' });
     }
 });
 
